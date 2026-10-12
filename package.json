@@ -1,0 +1,44 @@
+{
+  "name": "streamdeck-claude-usage",
+  "version": "1.0.0",
+  "description": "Stream Deck plugin that shows your live Claude / Claude Code usage limits \u2014 session, weekly and per-model \u2014 right on your keys.",
+  "type": "module",
+  "private": true,
+  "license": "MIT",
+  "author": "ExecSam",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ExecSam/streamdeck-cc.git"
+  },
+  "scripts": {
+    "build": "rollup -c",
+    "watch": "rollup -c -w --watch.onEnd=\"streamdeck restart com.execsam.claude-usage\"",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "smoke": "node scripts/smoke-test.mjs",
+    "icons": "tsx scripts/build-icons.ts",
+    "images": "tsx scripts/readme-images.ts",
+    "previews": "tsx scripts/render-previews.ts",
+    "validate": "streamdeck validate com.execsam.claude-usage.sdPlugin",
+    "pack": "npm run build && streamdeck pack com.execsam.claude-usage.sdPlugin --output dist --force",
+    "link": "streamdeck link com.execsam.claude-usage.sdPlugin"
+  },
+  "dependencies": {
+    "@elgato/streamdeck": "2.1.2"
+  },
+  "devDependencies": {
+    "@elgato/cli": "1.10.2",
+    "@resvg/resvg-js": "2.6.2",
+    "@rollup/plugin-commonjs": "^28.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.0",
+    "@rollup/plugin-terser": "^1.0.0",
+    "@rollup/plugin-typescript": "^12.1.0",
+    "@tsconfig/node20": "^20.1.4",
+    "@types/node": "^22.10.0",
+    "rollup": "^4.24.0",
+    "tslib": "^2.8.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^5.0.3"
+  }
+}

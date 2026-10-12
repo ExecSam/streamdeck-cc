@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Claude Usage Meter</title>
+		<link rel="stylesheet" href="settings.css" />
+	</head>
+	<body>
+		<!-- Header: live preview of this key + connection status -->
+		<header class="hero">
+			<div class="preview" id="preview" title="Live preview of this key"><img id="previewImg" alt="" /></div>
+			<div class="hero-text">
+				<div class="title">Claude Usage Meter <span class="version" id="version"></span></div>
+				<div class="status" id="status"><span class="dot"></span><span id="statusText">Starting…</span></div>
+				<div class="sub" id="statusSub"></div>
+			</div>
+		</header>
+
+		<!-- Error banner -->
+		<div class="banner" id="banner" hidden>
+			<div class="banner-text" id="bannerText"></div>
+			<div class="banner-actions" id="bannerActions"></div>
+		</div>
+
+		<!-- Setup guide -->
+		<section class="card setup" id="setup" hidden>
+			<div class="card-head">
+				<h2>Connect your Claude account</h2>
+				<button class="link" id="setupClose" hidden>Cancel</button>
+			</div>
+			<p class="muted">
+				Usage comes straight from claude.ai using your browser's session cookie. It takes about a minute, and you don't need the Claude app.
+			</p>
+
+			<div class="tabs" role="tablist" id="browserTabs">
+				<button role="tab" data-browser="chromium" aria-selected="true">Chrome · Edge · Brave · Arc</button>
+				<button role="tab" data-browser="firefox">Firefox</button>
+				<button role="tab" data-browser="safari">Safari</button>
+			</div>
+
+			<ol class="steps">
+				<li>
+					<span class="step-title">Open your usage page</span>
+					<span>Make sure you're signed in to claude.ai.</span>
+					<button class="btn small" id="openUsage">Open claude.ai/settings/usage ↗</button>
+				</li>
+				<li data-only="safari">
+					<span class="step-title">Turn on Safari's developer tools</span>
+					<span>Safari → Settings → Advanced → tick <b>Show features for web developers</b>.</span>
+				</li>
+				<li>
+					<span class="step-title">Open DevTools → Network</span>
+					<span data-only="chromium">Press <kbd class="mac">⌥⌘I</kbd><kbd class="win">F12</kbd> and pick the <b>Network</b> tab.</span>
+					<span data-only="firefox">Press <kbd class="mac">⌥⌘E</kbd><kbd class="win">Ctrl+Shift+E</kbd> to open the <b>Network</b> panel.</span>
+					<span data-only="safari">Press <kbd>⌥⌘I</kbd> and pick the <b>Network</b> tab.</span>
+				</li>
+				<li>
+					<span class="step-title">Reload and find the “usage” request</span>
+					<span>Type <code>usage</code> in the filter box, then reload the page (<kbd class="mac">⌘R</kbd><kbd class="win">Ctrl+R</kbd>).</span>
+				</li>
+				<li>
+					<span class="step-title">Copy it</span>
+					<span data-only="chromium"
+						>Right-click <b>usage</b> → <b>Copy</b> → <b>Copy as cURL</b> <em>(best — includes everything)</em>. Or click it → <b>Headers</b> → <b>Request Headers</b> and copy
+						the <b>cookie</b> value.</span
+					>
+					<span data-only="firefox"
+						>Right-click <b>usage</b> → <b>Copy Value</b> → <b>Copy as cURL</b>. Or click it → <b>Headers</b> → <b>Request Headers</b> → right-click <b>Cookie</b> →
+						<b>Copy Value</b>.</span
+					>
+					<span data-only="safari">Right-click <b>usage</b> → <b>Copy as cURL</b>. Or select it → <b>Headers</b> and copy the <b>Cookie</b> request header.</span>
+				</li>
+				<li>
+					<span class="step-title">Paste here</span>
+					<div class="paste">
+						<textarea
+							id="paste"
+							class="masked"
+							rows="4"
+							spellcheck="false"
+							autocomplete="off"
+							placeholder="Paste the cURL command, the Cookie header, or just the sessionKey (sk-ant-…)"
+						></textarea>
+						<button class="link reveal" id="reveal" type="button">Show</button>
+					</div>
+					<div class="row">
+						<button class="btn primary" id="connect">Connect</button>
+						<span class="result" id="connectResult" role="status"></span>
+					</div>
+				</li>
+			</ol>
+
+			<details class="more">
+				<summary>Other ways to connect</summary>
+				<p class="muted">
+					Already use Claude Code on this computer? The plugin can read usage through its login instead of a cookie. On macOS you'll be asked once to let Stream Deck read the
+					“Claude Code-credentials” keychain item.
+				</p>
+				<button class="btn small" id="useClaudeCode">Use my Claude Code login</button>
+			</details>
+
+			<p class="privacy">
+				🔒 Your cookie is stored only in Stream Deck's settings on this computer and is only ever sent to claude.ai. Treat it like a password: anyone with it can use your
+				Claude account.
+			</p>
+		</section>
+
+		<!-- Live usage -->
+		<section class="card" id="usage" hidden>
+			<div class="card-head">
+				<h2>Live usage</h2>
+				<button class="icon-btn" id="refresh" title="Refresh now">↻</button>
+			</div>
+			<div id="windows"></div>
+			<div class="extra" id="extra" hidden></div>
+		</section>
+
+		<!-- Per-key options -->
+		<section class="card" id="keyCard">
+			<div class="card-head"><h2 id="keyTitle">This key</h2></div>
+
+			<label class="field" id="metricField">
+				<span>Shows</span>
+				<select id="metric"></select>
+			</label>
+
+			<div class="field">
+				<span>Style</span>
+				<div class="segmented" id="style"></div>
+			</div>
+
+			<div id="keyControls">
+				<label class="field">
+					<span>Tap</span>
+					<select id="press"></select>
+				</label>
+				<label class="field">
+					<span>Hold</span>
+					<select id="longPress"></select>
+				</label>
+			</div>
+			<p class="muted dial-help" id="dialHelp" hidden>Rotate to switch limit · push or tap to refresh · long-touch opens claude.ai.</p>
+
+			<label class="check">
+				<input type="checkbox" id="showPace" />
+				<span>Show pace marker <em class="muted">— the white tick is where you'd be if you spread usage evenly across the window</em></span>
+			</label>
+		</section>
+
+		<!-- Global look & feel -->
+		<section class="card">
+			<div class="card-head"><h2>Look &amp; feel <span class="muted">(all keys)</span></h2></div>
+			<div class="field">
+				<span>Theme</span>
+				<div class="themes" id="themes"></div>
+			</div>
+			<label class="field">
+				<span>Warning at</span>
+				<span class="range"><input type="range" id="warnAt" min="10" max="95" step="5" /><output id="warnAtOut"></output></span>
+			</label>
+			<label class="field">
+				<span>Critical at</span>
+				<span class="range"><input type="range" id="critAt" min="15" max="100" step="5" /><output id="critAtOut"></output></span>
+			</label>
+			<div class="gradient" id="gradient" title="How keys are coloured from 0% to 100%"></div>
+			<label class="check"><input type="checkbox" id="pulse" /><span>Pulse when critical</span></label>
+			<label class="check"><input type="checkbox" id="animate" /><span>Animate refreshes</span></label>
+			<label class="field">
+				<span>Refresh every</span>
+				<select id="pollSeconds">
+					<option value="30">30 seconds</option>
+					<option value="60">1 minute</option>
+					<option value="120">2 minutes</option>
+					<option value="300">5 minutes</option>
+					<option value="600">10 minutes</option>
+				</select>
+			</label>
+		</section>
+
+		<!-- Account -->
+		<section class="card" id="account" hidden>
+			<div class="card-head"><h2>Account</h2></div>
+			<div class="account-line" id="accountLine"></div>
+			<div class="row">
+				<button class="btn small" id="replace">Replace cookie</button>
+				<button class="btn small danger" id="disconnect">Disconnect</button>
+			</div>
+			<label class="check" id="fallbackRow">
+				<input type="checkbox" id="claudeCodeFallback" />
+				<span>If Cloudflare blocks claude.ai, fall back to my Claude Code login</span>
+			</label>
+		</section>
+
+		<footer>
+			<a href="#" data-url="https://github.com/ExecSam/streamdeck-cc">GitHub</a> ·
+			<a href="#" data-url="https://github.com/ExecSam/streamdeck-cc#troubleshooting">Troubleshooting</a> ·
+			<span>Not affiliated with Anthropic</span>
+		</footer>
+
+		<script src="settings.js"></script>
+	</body>
+</html>
